@@ -46,7 +46,13 @@ Build the standalone `3d-module/` web viewer with Three.js.
 - [x] Create `3d-module/main.js`
 
 ## ✅ Verification
-- [ ] Open `3d-module/index.html` in Chrome and confirm 3D house renders
-- [ ] Click materials to verify roof color/texture changes
-- [ ] Test X-Ray, Day/Night, Reset, model switcher
-- [ ] Test cost estimator inputs
+- [x] Open `3d-module/index.html` in Chrome and confirm 3D house renders
+- [x] Click materials to verify roof color/texture changes
+- [x] Test X-Ray, Day/Night, Reset, model switcher
+- [x] Test cost estimator inputs (25 sheets × ₱450 = ₱11,250.00 ✓)
+
+## 🔧 Fix Applied
+- Switched from CDN Three.js/OrbitControls to **local files** (`three.min.js`, `OrbitControls.js`)
+  - Reason: Browser ORB (Opaque Response Blocking) was preventing `THREE.OrbitControls` from loading via CDN
+  - Used Three.js r145 (OrbitControls compatible with global `THREE` namespace)
+

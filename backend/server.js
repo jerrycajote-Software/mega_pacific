@@ -2,7 +2,8 @@ const express    = require('express');
 const cors       = require('cors');
 const bodyParser = require('body-parser');
 
-const productsRouter = require('./routes/products');
+const productsRouter   = require('./routes/products');
+const stockLogsRouter  = require('./routes/stock_logs');
 
 const app  = express();
 const PORT = 3000;
@@ -17,7 +18,8 @@ app.get('/', (req, res) => {
   res.json({ message: '🏠 Mega Pacific API is running', version: '1.0.0' });
 });
 
-app.use('/products', productsRouter);
+app.use('/products',   productsRouter);
+app.use('/stock-logs', stockLogsRouter);
 
 // ── 404 Handler ──────────────────────────
 app.use((req, res) => {
@@ -34,7 +36,8 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log('');
   console.log('🚀 Mega Pacific API Server');
-  console.log(`   Running at: http://localhost:${PORT}`);
-  console.log(`   Products:   http://localhost:${PORT}/products`);
+  console.log(`   Running at:    http://localhost:${PORT}`);
+  console.log(`   Products:      http://localhost:${PORT}/products`);
+  console.log(`   Stock Logs:    http://localhost:${PORT}/stock-logs`);
   console.log('');
 });

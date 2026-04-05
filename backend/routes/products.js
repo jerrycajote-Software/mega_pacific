@@ -103,6 +103,67 @@ router.put('/:id', async (req, res) => {
 });
 
 // ─────────────────────────────────────────
+// PATCH /products/:id/stock — Adjust stock
+// Body: { action: 'add'|'deduct', quantity, note? }
+// ─────────────────────────────────────────
+router.patch('/:id/stock', async (req, res) => {
+  const { id } = req.params;
+  const { action, quantity, note } = req.body;
+
+  // Validation
+  if (!action || !['add', 'deduct'].includes(action)) {
+    return res.status(400).json({ error: 'action must be "add" or "deduct"' });
+  }
+  const qty = parseInt(quantity);
+  if (isNaN(qty) || qty <= 0) {
+    return res.status(400).json({ error: 'quantity must be a positive integer' });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Fetch current stock
+    const current = await client.query('SELECT * FROM products WHERE id = $1 FOR UPDATE', [id]);
+    if (current.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    const currentStock = current.rows[0].stock;
+    if (action === 'deduct' && qty > currentStock) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        error: `Cannot deduct ${qty} — only ${currentStock} in stock`,
+      });
+    }
+
+    const newStock = action === 'add' ? currentStock + qty : currentStock - qty;
+
+    // Update product stock
+    const updated = await client.query(
+      'UPDATE products SET stock = $1 WHERE id = $2 RETURNING *',
+      [newStock, id]
+    );
+
+    // Record movement in stock_logs
+    await client.query(
+      'INSERT INTO stock_logs (product_id, action, quantity, note) VALUES ($1, $2, $3, $4)',
+      [id, action, qty, note || null]
+    );
+
+    await client.query('COMMIT');
+    res.json(updated.rows[0]);
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('PATCH /products/:id/stock error:', err.message);
+    res.status(500).json({ error: 'Failed to adjust stock' });
+  } finally {
+    client.release();
+  }
+});
+
+// ─────────────────────────────────────────
 // DELETE /products/:id — Delete product
 // ─────────────────────────────────────────
 router.delete('/:id', async (req, res) => {

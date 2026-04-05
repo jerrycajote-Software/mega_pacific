@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dashboard_screen.dart';
 import 'product_list_screen.dart';
+import 'inventory_screen.dart';
 
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key});
@@ -143,24 +144,7 @@ class _AdminShellState extends State<AdminShell> {
                                 : FontWeight.normal,
                           ),
                         ),
-                        if (index == 2) ...[
-                          const Spacer(),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1E3A5F),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Text(
-                              'Soon',
-                              style: TextStyle(
-                                color: Color(0xFF607D96),
-                                fontSize: 10,
-                              ),
-                            ),
-                          ),
-                        ],
+                        if (index == 2) const SizedBox.shrink(),
                       ],
                     ),
                   ),
@@ -215,7 +199,7 @@ class _AdminShellState extends State<AdminShell> {
       case 1:
         return const ProductListScreen();
       case 2:
-        return _buildComingSoon('Inventory Management');
+        return const InventoryScreen();
       default:
         return const DashboardScreen();
     }
