@@ -4,6 +4,8 @@ const bodyParser = require('body-parser');
 
 const productsRouter   = require('./routes/products');
 const stockLogsRouter  = require('./routes/stock_logs');
+const authRouter       = require('./routes/auth');
+const reviewsRouter    = require('./routes/reviews');
 
 const app  = express();
 const PORT = 3000;
@@ -20,6 +22,8 @@ app.get('/', (req, res) => {
 
 app.use('/products',   productsRouter);
 app.use('/stock-logs', stockLogsRouter);
+app.use('/auth',       authRouter);
+app.use('/reviews',    reviewsRouter);
 
 // ── 404 Handler ──────────────────────────
 app.use((req, res) => {
@@ -37,7 +41,9 @@ app.listen(PORT, () => {
   console.log('');
   console.log('🚀 Mega Pacific API Server');
   console.log(`   Running at:    http://localhost:${PORT}`);
+  console.log(`   Auth:          http://localhost:${PORT}/auth`);
   console.log(`   Products:      http://localhost:${PORT}/products`);
   console.log(`   Stock Logs:    http://localhost:${PORT}/stock-logs`);
+  console.log(`   Reviews:       http://localhost:${PORT}/reviews`);
   console.log('');
 });

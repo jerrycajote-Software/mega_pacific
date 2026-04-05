@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../services/api_service.dart';
+import '../auth/login_screen.dart';
 import 'dashboard_screen.dart';
 import 'product_list_screen.dart';
 import 'inventory_screen.dart';
@@ -18,6 +20,16 @@ class _AdminShellState extends State<AdminShell> {
     _NavItem(icon: Icons.inventory_2_rounded, label: 'Products'),
     _NavItem(icon: Icons.warehouse_rounded,  label: 'Inventory'),
   ];
+
+  Future<void> _logout() async {
+    await ApiService.logout();
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -144,7 +156,6 @@ class _AdminShellState extends State<AdminShell> {
                                 : FontWeight.normal,
                           ),
                         ),
-                        if (index == 2) const SizedBox.shrink(),
                       ],
                     ),
                   ),
@@ -158,9 +169,10 @@ class _AdminShellState extends State<AdminShell> {
           // ── Footer ────────────────────────────
           Container(height: 1, color: const Color(0xFF1A2F40)),
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             child: Row(
               children: [
+                // Avatar
                 Container(
                   width: 34,
                   height: 34,
@@ -171,18 +183,51 @@ class _AdminShellState extends State<AdminShell> {
                   child: const Icon(Icons.person, color: Color(0xFF607D96), size: 18),
                 ),
                 const SizedBox(width: 10),
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Administrator',
-                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                // Name & Email
+                SizedBox(
+                  width: 130,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Administrator',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const Text(
+                        'admin@megapacific.com',
+                        style: TextStyle(color: Color(0xFF607D96), fontSize: 10),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                // ── Logout Button ──────────────────
+                Tooltip(
+                  message: 'Log Out',
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: _logout,
+                    child: Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2C1F1F),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.logout_rounded,
+                        color: Color(0xFFEF5350),
+                        size: 18,
+                      ),
                     ),
-                    Text(
-                      'admin@megapacific.com',
-                      style: TextStyle(color: Color(0xFF607D96), fontSize: 10),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -203,34 +248,6 @@ class _AdminShellState extends State<AdminShell> {
       default:
         return const DashboardScreen();
     }
-  }
-
-  Widget _buildComingSoon(String title) {
-    return Container(
-      color: const Color(0xFFF0F4F8),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.construction_rounded,
-                size: 64, color: Colors.grey.shade400),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0D1B2A)),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'This feature is coming in a future phase.',
-              style: TextStyle(color: Colors.grey.shade500),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 

@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'screens/auth/login_screen.dart';
 import 'screens/admin/admin_shell.dart';
+import 'screens/customer/customer_home_screen.dart';
+import 'services/api_service.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MegaPacificApp());
 }
 
@@ -11,7 +16,7 @@ class MegaPacificApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Mega Pacific Admin',
+      title: 'Mega Pacific Roofing',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         fontFamily: 'Roboto',
@@ -20,127 +25,121 @@ class MegaPacificApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const AdminShell(),
+      home: const _SplashRouter(),
     );
   }
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+/// Checks existing session on startup and routes without showing a flash login screen.
+class _SplashRouter extends StatefulWidget {
+  const _SplashRouter();
 
-  // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
+  State<_SplashRouter> createState() => _SplashRouterState();
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
+class _SplashRouterState extends State<_SplashRouter> {
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
+  void initState() {
+    super.initState();
+    _checkSession();
+  }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  Future<void> _checkSession() async {
+    try {
+      final token = await ApiService.getToken();
+      final role = await ApiService.getRole();
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+      print('Session check — token exists: ${token != null}, role: $role');
+
+      Widget destination;
+
+      if (token != null && role != null) {
+        // Check JWT expiry
+        bool isExpired = true;
+        try {
+          final parts = token.split('.');
+          if (parts.length == 3) {
+            final payload = utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
+            final map = json.decode(payload) as Map<String, dynamic>;
+            final exp = map['exp'] as int?;
+            isExpired = exp == null ||
+                DateTime.fromMillisecondsSinceEpoch(exp * 1000).isBefore(DateTime.now());
+          }
+        } catch (e) {
+          print('JWT decode error: $e');
+        }
+
+        if (!isExpired) {
+          destination = role == 'admin' ? const AdminShell() : const CustomerHomeScreen();
+          print('Session valid — routing to: $role');
+        } else {
+          await ApiService.logout();
+          destination = const LoginScreen();
+          print('Session expired — routing to login');
+        }
+      } else {
+        destination = const LoginScreen();
+        print('No session — routing to login');
+      }
+
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => destination),
+      );
+    } catch (e) {
+      print('Session check error: $e');
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    // Show a branded loading screen while checking the session
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
+      backgroundColor: const Color(0xFF0D1B2A),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF1565C0), Color(0xFF1E88E5)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: const Icon(Icons.roofing, color: Colors.white, size: 38),
+            ),
+            const SizedBox(height: 24),
             const Text(
-              'You have pushed the button this many times:',
+              'Mega Pacific',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
+            const SizedBox(height: 8),
             Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+              'Roofing System',
+              style: TextStyle(color: Colors.grey[500], fontSize: 14),
             ),
+            const SizedBox(height: 40),
+            const CircularProgressIndicator(color: Color(0xFF1E88E5)),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
+

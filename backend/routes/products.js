@@ -41,7 +41,7 @@ router.get('/:id', async (req, res) => {
 // POST /products — Create new product
 // ─────────────────────────────────────────
 router.post('/', async (req, res) => {
-  const { name, category, price, stock } = req.body;
+  const { name, category, price, stock, image_url } = req.body;
 
   // Validation
   if (!name || !category || price === undefined || stock === undefined) {
@@ -56,8 +56,8 @@ router.post('/', async (req, res) => {
 
   try {
     const result = await pool.query(
-      'INSERT INTO products (name, category, price, stock) VALUES ($1, $2, $3, $4) RETURNING *',
-      [name.trim(), category.trim(), parseFloat(price), parseInt(stock)]
+      'INSERT INTO products (name, category, price, stock, image_url) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [name.trim(), category.trim(), parseFloat(price), parseInt(stock), image_url || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -71,7 +71,7 @@ router.post('/', async (req, res) => {
 // ─────────────────────────────────────────
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, category, price, stock } = req.body;
+  const { name, category, price, stock, image_url } = req.body;
 
   // Validation
   if (!name || !category || price === undefined || stock === undefined) {
@@ -87,10 +87,10 @@ router.put('/:id', async (req, res) => {
   try {
     const result = await pool.query(
       `UPDATE products
-       SET name = $1, category = $2, price = $3, stock = $4
-       WHERE id = $5
+       SET name = $1, category = $2, price = $3, stock = $4, image_url = $5
+       WHERE id = $6
        RETURNING *`,
-      [name.trim(), category.trim(), parseFloat(price), parseInt(stock), id]
+      [name.trim(), category.trim(), parseFloat(price), parseInt(stock), image_url || null, id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Product not found' });
